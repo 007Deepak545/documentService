@@ -1,0 +1,805 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "CEV Document Management API",
+    "description": "The CEV Document API provides endpoints to upload, retrieve, and manage member documents. It supports secure document submission, storage in cloud systems such as Amazon S3, document verification, and status tracking. These APIs enable client applications and internal systems to process and manage member documents using standardized RESTful responses and HTTP status codes."   
+	"version": "v1"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Document Upload Service",
+      "description": "APIs for member submission, document upload, verification and status tracking"
+    }
+  ],
+  "paths": {
+    "/v1/upload": {
+      "post": {
+        "tags": [
+          "Document Upload Service"
+        ],
+        "summary": "Upload Member Document",
+        "description": "Uploads a document for a member",
+        "operationId": "storeFile",
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "activityType",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "file"
+                ],
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "File uploaded successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "type": "https://example.com/problems/file-upload-error",
+                  "title": "File upload failed",
+                  "status": 400,
+                  "detail": "No file provided in the request or unsupported file type.",
+                  "instancePath": "/uploads/{traceId}",
+                  "traceId": "generated-trace-id"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "type": "https://example.com/problems/unauthorized",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Authentication is required to upload files.",
+                  "instancePath": "/uploads/{traceId}",
+                  "traceId": "generated-trace-id"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "type": "https://example.com/problems/forbidden",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "You do not have permission to upload documents for this member.",
+                  "instancePath": "/uploads/{traceId}",
+                  "traceId": "generated-trace-id"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Member or file not found",
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "type": "https://example.com/problems/member-not-found",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "Member does not exist.",
+                  "instancePath": "/uploads/{traceId}",
+                  "traceId": "generated-trace-id"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "type": "https://example.com/problems/file-upload-error",
+                  "title": "File upload failed",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instancePath": "/uploads/{traceId}",
+                  "traceId": "generated-trace-id"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+	  "x-amazon-apigateway-integration": {
+      "connectionId": "${stageVariables.vpcLinkId}",
+      "connectionType": "VPC_LINK",
+      "type": "http",
+      "httpMethod": "POST",
+      "uri": "https://${stageVariables.integrationEndpoint}/cev/document/v1/api/upload",
+      "passthroughBehavior": "when_no_templates",
+      "requestTemplates": {
+      "application/json": "$input.body"
+          },
+          "responses": {
+            "200": {
+              "statusCode": "201"
+            },
+            "400": {
+              "statusCode": "400"
+            },
+            "401": {
+              "statusCode": "401"
+            },
+            "403": {
+              "statusCode": "403"
+            },
+            "500": {
+              "statusCode": "500"
+            }
+          },
+          "requestParameters": {
+            "integration.request.header.Accept": "method.request.header.Accept",
+            "integration.request.header.Content-Type": "method.request.header.Content-Type"
+          }
+        }
+      }
+    },
+	    "/v1/file/{documentId}": {
+      "get": {
+        "tags": [
+          "Document Upload Service"
+        ],
+        "summary": "Get Member Document",
+        "description": "Retrieve document from S3",
+        "operationId": "getMemberDocument",
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request: invalid documentId",
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "type": "https://example.com/problems/bad-request",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "documentId must be provided and cannot be empty.",
+                  "instancePath": "/files/{documentId}/{traceId}",
+                  "traceId": "generated-trace-id"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized: authentication required",
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "type": "https://example.com/problems/unauthorized",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Authentication is required to retrieve this document.",
+                  "instancePath": "/files/{documentId}/{traceId}",
+                  "traceId": "generated-trace-id"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden: no permission to access document",
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "type": "https://example.com/problems/forbidden",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "You do not have permission to access this document.",
+                  "instancePath": "/files/{documentId}/{traceId}",
+                  "traceId": "generated-trace-id"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document or file not found",
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "type": "https://example.com/problems/document-not-found",
+                  "title": "Document retrieval failed",
+                  "status": 404,
+                  "detail": "Document or file not found.",
+                  "instancePath": "/files/{documentId}/{traceId}",
+                  "traceId": "generated-trace-id"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error: unexpected error",
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "type": "https://example.com/problems/file-retrieval-error",
+                  "title": "Document retrieval failed",
+                  "status": 500,
+                  "detail": "An unexpected error occurred while fetching the file.",
+                  "instancePath": "/files/{documentId}/{traceId}",
+                  "traceId": "generated-trace-id"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  ,
+	  "x-amazon-apigateway-integration": {
+      "connectionId": "${stageVariables.vpcLinkId}",
+      "connectionType": "VPC_LINK",
+      "type": "http",
+      "httpMethod": "GET",
+      "uri": "https://${stageVariables.integrationEndpoint}/cev/document/v1/api/{documentId}/file",
+      "passthroughBehavior": "when_no_templates",
+      "requestTemplates": {
+      "application/json": "$input.body"
+          },
+          "responses": {
+            "200": {
+              "statusCode": "200"
+            },
+            "400": {
+              "statusCode": "400"
+            },
+            "401": {
+              "statusCode": "401"
+            },
+            "403": {
+              "statusCode": "403"
+            },
+            "500": {
+              "statusCode": "500"
+            }
+          },
+          "requestParameters": {
+            "integration.request.header.Accept": "method.request.header.Accept",
+            "integration.request.header.Content-Type": "method.request.header.Content-Type"
+          }
+        }
+      }
+    },
+    "/v1/ai-data": {
+      "post": {
+        "tags": [
+          "Document Upload Service"
+        ],
+        "summary": "Store Verification Result",
+        "description": "Stores AI verification results",
+        "operationId": "storeVerificationResult",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "AI verification result stored successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "type": "https://example.com/problems/json-processing-error",
+                  "title": "Invalid JSON",
+                  "status": 400,
+                  "detail": "Failed to parse request data",
+                  "instancePath": "/v1/ai-data/{traceId}",
+                  "traceId": "generated-trace-id"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "type": "https://example.com/problems/unauthorized",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Authentication is required to store verification results",
+                  "instancePath": "/v1/ai-data/{traceId}",
+                  "traceId": "generated-trace-id"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "type": "https://example.com/problems/forbidden",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "You do not have permission to store verification results",
+                  "instancePath": "/v1/ai-data/{traceId}",
+                  "traceId": "generated-trace-id"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "type": "https://example.com/problems/internal-server-error",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred. Please try again later.",
+                  "instancePath": "/v1/ai-data/{traceId}",
+                  "traceId": "generated-trace-id"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+	  "x-amazon-apigateway-integration": {
+      "connectionId": "${stageVariables.vpcLinkId}",
+       "connectionType": "VPC_LINK",
+       "type": "http",
+       "httpMethod": "POST",
+       "uri": "https://${stageVariables.integrationEndpoint}/cev/document/v1/api/ai-data",
+       "passthroughBehavior": "when_no_templates",
+        "requestTemplates": {
+        "application/json": "$input.body"
+          },
+          "responses": {
+            "200": {
+              "statusCode": "201"
+            },
+            "400": {
+              "statusCode": "400"
+            },
+            "401": {
+              "statusCode": "401"
+            },
+            "403": {
+              "statusCode": "403"
+            },
+            "500": {
+              "statusCode": "500"
+            }
+          },
+          "requestParameters": {
+            "integration.request.header.Accept": "method.request.header.Accept",
+            "integration.request.header.Content-Type": "method.request.header.Content-Type"
+          }
+        }
+      }
+    },
+  "components": {
+    "schemas": {
+      "Check": {
+        "type": "object",
+        "properties": {
+          "checkId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "details": {
+            "$ref": "#/components/schemas/CheckDetails"
+          }
+        }
+      },
+      "CheckDetails": {
+        "type": "object",
+        "properties": {
+          "submitterName": {
+            "type": "string"
+          },
+          "extractedName": {
+            "type": "string"
+          },
+          "submitterDob": {
+            "type": "string"
+          },
+          "extractedDob": {
+            "type": "string"
+          },
+          "declaredActivityType": {
+            "type": "string"
+          },
+          "classifiedActivityType": {
+            "type": "string"
+          },
+          "hardshipType": {
+            "type": "string"
+          },
+          "subType": {
+            "type": "string"
+          },
+          "effectiveDate": {
+            "type": "string"
+          },
+          "providerName": {
+            "type": "string"
+          }
+        }
+      },
+      "Classification": {
+        "type": "object",
+        "properties": {
+          "activityType": {
+            "type": "string"
+          }
+        }
+      },
+      "ContentSafety": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "reasonCode": {
+            "type": "string"
+          }
+        }
+      },
+      "DocList": {
+        "type": "object",
+        "properties": {
+          "uploadedDocument": {
+            "$ref": "#/components/schemas/UploadedDocument"
+          },
+          "contentSafety": {
+            "$ref": "#/components/schemas/ContentSafety"
+          },
+          "riskSignals": {
+            "$ref": "#/components/schemas/RiskSignals"
+          },
+          "result": {
+            "$ref": "#/components/schemas/Result"
+          }
+        }
+      },
+      "DocumentReviewRequest": {
+        "type": "object",
+        "properties": {
+          "route": {
+            "$ref": "#/components/schemas/Route"
+          },
+          "submitter": {
+            "$ref": "#/components/schemas/Submitter"
+          },
+          "eligibilityContext": {
+            "$ref": "#/components/schemas/EligibilityContext"
+          },
+          "docList": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocList"
+            }
+          },
+          "transactionId": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "EligibilityContext": {
+        "type": "object",
+        "properties": {
+          "reviewCycle": {
+            "$ref": "#/components/schemas/ReviewCycle"
+          },
+          "lookBackMonths": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "Extraction": {
+        "type": "object",
+        "properties": {
+          "subject": {
+            "$ref": "#/components/schemas/Subject"
+          },
+          "medicalExemption": {
+            "$ref": "#/components/schemas/MedicalExemption"
+          }
+        }
+      },
+      "FileRef": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "MedicalExemption": {
+        "type": "object",
+        "properties": {
+          "hardshipType": {
+            "type": "string"
+          },
+          "subType": {
+            "type": "string"
+          },
+          "effectiveDate": {
+            "type": "string"
+          },
+          "provider": {
+            "$ref": "#/components/schemas/Provider"
+          },
+          "supportingCodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Provider": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          }
+        }
+      },
+      "Result": {
+        "type": "object",
+        "properties": {
+          "classification": {
+            "$ref": "#/components/schemas/Classification"
+          },
+          "validation": {
+            "$ref": "#/components/schemas/Validation"
+          },
+          "extraction": {
+            "$ref": "#/components/schemas/Extraction"
+          }
+        }
+      },
+      "ReviewCycle": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "RiskSignals": {
+        "type": "object",
+        "properties": {
+          "fraudFlags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "inconsistencies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Route": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string"
+          },
+          "apiver": {
+            "type": "string"
+          },
+          "tenantId": {
+            "type": "string"
+          },
+          "appClient": {
+            "type": "string"
+          },
+          "requestGuid": {
+            "type": "string"
+          },
+          "requestType": {
+            "type": "string"
+          }
+        }
+      },
+      "Subject": {
+        "type": "object",
+        "properties": {
+          "extractedName": {
+            "type": "string"
+          },
+          "extractedDob": {
+            "type": "string"
+          }
+        }
+      },
+      "Submitter": {
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "string"
+          },
+          "submitterName": {
+            "type": "string"
+          },
+          "submitterDob": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "UploadTime": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "timezone": {
+            "type": "string"
+          }
+        }
+      },
+      "UploadedDocument": {
+        "type": "object",
+        "properties": {
+          "documentId": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "fileRef": {
+            "$ref": "#/components/schemas/FileRef"
+          },
+          "uploadTime": {
+            "$ref": "#/components/schemas/UploadTime"
+          },
+          "declaredActivityType": {
+            "type": "string"
+          }
+        }
+      },
+      "Validation": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Check"
+            }
+          }
+        }
+      },
+      "ApiSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "apiMessage": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  }
+}
