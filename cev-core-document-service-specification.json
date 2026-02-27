@@ -156,7 +156,7 @@
       "connectionType": "VPC_LINK",
       "type": "http",
       "httpMethod": "POST",
-      "uri": "https://${stageVariables.integrationEndpoint}/cev/document/v1/api/upload",
+      "uri": "https://${stageVariables.integrationEndpoint}/cev/document/api/v1/upload",
       "passthroughBehavior": "when_no_templates",
       "requestTemplates": {
       "application/json": "$input.body"
@@ -299,7 +299,7 @@
       "connectionType": "VPC_LINK",
       "type": "http",
       "httpMethod": "GET",
-      "uri": "https://${stageVariables.integrationEndpoint}/cev/document/v1/api/{documentId}/file",
+      "uri": "https://${stageVariables.integrationEndpoint}/cev/document/api/v1/{documentId}/file",
       "passthroughBehavior": "when_no_templates",
       "requestTemplates": {
       "application/json": "$input.body"
@@ -425,7 +425,7 @@
        "connectionType": "VPC_LINK",
        "type": "http",
        "httpMethod": "POST",
-       "uri": "https://${stageVariables.integrationEndpoint}/cev/document/v1/api/ai-data",
+       "uri": "https://${stageVariables.integrationEndpoint}/cev/document/api/v1/ai-data",
        "passthroughBehavior": "when_no_templates",
         "requestTemplates": {
         "application/json": "$input.body"
@@ -802,4 +802,5 @@
       }
     }
   }
+
 }
